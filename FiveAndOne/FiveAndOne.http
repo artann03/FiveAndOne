@@ -1,0 +1,6 @@
+@FiveAndOne_HostAddress = http://localhost:5166
+
+GET {{FiveAndOne_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
