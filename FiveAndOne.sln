@@ -3,7 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36109.1 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiveAndOne", "FiveAndOne\FiveAndOne.csproj", "{17CF72B5-D9C3-44F9-A243-E1CB4FDA5F86}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiveAndOne.API", "FiveAndOne\FiveAndOne.API.csproj", "{17CF72B5-D9C3-44F9-A243-E1CB4FDA5F86}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiveAndOne.Domain", "FiveAndOne.Domain\FiveAndOne.Domain.csproj", "{BEB0FCEF-6935-4A5D-9169-8C8E1550FB7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiveAndOne.Infrastructure", "FiveAndOne.Infrastructure\FiveAndOne.Infrastructure.csproj", "{CCAB734E-1B44-455A-9F34-8FBC75F9486E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiveAndOne.Application", "FiveAndOne.Application\FiveAndOne.Application.csproj", "{4DE05E4D-12A1-42CF-B000-759392F022F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{17CF72B5-D9C3-44F9-A243-E1CB4FDA5F86}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17CF72B5-D9C3-44F9-A243-E1CB4FDA5F86}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17CF72B5-D9C3-44F9-A243-E1CB4FDA5F86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEB0FCEF-6935-4A5D-9169-8C8E1550FB7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEB0FCEF-6935-4A5D-9169-8C8E1550FB7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEB0FCEF-6935-4A5D-9169-8C8E1550FB7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEB0FCEF-6935-4A5D-9169-8C8E1550FB7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCAB734E-1B44-455A-9F34-8FBC75F9486E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCAB734E-1B44-455A-9F34-8FBC75F9486E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCAB734E-1B44-455A-9F34-8FBC75F9486E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCAB734E-1B44-455A-9F34-8FBC75F9486E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DE05E4D-12A1-42CF-B000-759392F022F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DE05E4D-12A1-42CF-B000-759392F022F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DE05E4D-12A1-42CF-B000-759392F022F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DE05E4D-12A1-42CF-B000-759392F022F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

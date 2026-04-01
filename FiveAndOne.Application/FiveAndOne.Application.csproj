@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FiveAndOne.Domain\FiveAndOne.Domain.csproj" />
+    <ProjectReference Include="..\FiveAndOne.Infrastructure\FiveAndOne.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
