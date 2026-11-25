@@ -1,8 +1,11 @@
-﻿using FiveAndOne.Domain.Entities;
+﻿using FiveAndOne.Domain.Entities.Identity;
+using FiveAndOne.Domain.Enums;
 using FiveAndOne.Infrastructure.Persistence;
 using FiveAndOne.Infrastructure.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,6 +48,36 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .AnyAsync(x => x.Username == username, cancellationToken);
+    }
+
+    public async Task<bool> AnyWithRoleAsync(UserRole role, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .AnyAsync(x => x.Role == role, cancellationToken);
+    }
+
+    public async Task<(List<User> Items, int TotalCount)> GetPagedAsync(
+        int page,
+        int pageSize,
+        UserRole? role,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Users.AsNoTracking();
+
+        if (role.HasValue)
+        {
+            query = query.Where(x => x.Role == role.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
