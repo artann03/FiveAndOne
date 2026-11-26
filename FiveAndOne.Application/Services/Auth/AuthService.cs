@@ -1,7 +1,10 @@
 using FiveAndOne.Application.Common.Exceptions;
 using FiveAndOne.Application.Common.Settings;
 using FiveAndOne.Application.Dtos.Auth;
+using FiveAndOne.Application.Dtos.Businesses;
+using FiveAndOne.Application.Services.Businesses;
 using FiveAndOne.Application.Services.Users;
+using FiveAndOne.Infrastructure.Persistence;
 using FiveAndOne.Domain.Entities.Identity;
 using FiveAndOne.Domain.Enums;
 using FiveAndOne.Infrastructure.Repositories.RefreshTokens;
@@ -18,11 +21,15 @@ public class AuthService : IAuthService
 {
     private const string InvalidCredentials = "Invalid email or password.";
     private const string InvalidRefreshToken = "Invalid or expired refresh token.";
+    private const int MaxFailedLogins = 5;
+    private const int LockoutMinutes = 15;
 
     private readonly IUserService _userService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly ITokenService _tokenService;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IBusinessService _businessService;
+    private readonly ApplicationDbContext _db;
     private readonly JwtSettings _jwtSettings;
 
     public AuthService(
@@ -30,12 +37,16 @@ public class AuthService : IAuthService
         IRefreshTokenRepository refreshTokenRepository,
         ITokenService tokenService,
         IPasswordHasher<User> passwordHasher,
+        IBusinessService businessService,
+        ApplicationDbContext db,
         IOptions<JwtSettings> jwtSettings)
     {
         _userService = userService;
         _refreshTokenRepository = refreshTokenRepository;
         _tokenService = tokenService;
         _passwordHasher = passwordHasher;
+        _businessService = businessService;
+        _db = db;
         _jwtSettings = jwtSettings.Value;
     }
 
@@ -53,9 +64,38 @@ public class AuthService : IAuthService
             request.Email,
             request.Password,
             request.Role,
-            cancellationToken);
+            cancellationToken,
+            request.PhoneNumber,
+            request.PreferredLanguage);
 
         return await IssueTokensAsync(user, null, cancellationToken);
+    }
+
+    /// <summary>"Create business account" (story 06): the owner account and the business in one transaction.</summary>
+    public async Task<AuthResponse> RegisterBusinessAsync(RegisterBusinessRequest request, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var username = string.IsNullOrWhiteSpace(request.Username)
+            ? await _userService.GenerateUsernameAsync(request.Email!, cancellationToken)
+            : request.Username;
+
+        var user = await _userService.CreateUserAsync(
+            request.OwnerFirstName!,
+            request.OwnerLastName,
+            username,
+            request.Email!,
+            request.Password!,
+            UserRole.Business,
+            cancellationToken,
+            request.Phone,
+            request.PreferredLanguage);
+
+        await _businessService.AddBusinessAsync(user, request, request.RegistrationNumber, cancellationToken);
+        var response = await IssueTokensAsync(user, null, cancellationToken);   // saves the business too
+
+        await transaction.CommitAsync(cancellationToken);
+        return response;
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -152,12 +192,30 @@ public class AuthService : IAuthService
         var user = await _userService.GetByEmailAsync(request.Email, cancellationToken)
             ?? throw new UnauthorizedException(InvalidCredentials);
 
+        // Brute-force protection: after MaxFailedLogins wrong passwords the account is locked for a while.
+        var now = DateTime.UtcNow;
+        if (user.LockoutEndsAt > now)
+        {
+            var minutes = (int)Math.Ceiling((user.LockoutEndsAt.Value - now).TotalMinutes);
+            throw new TooManyRequestsException($"Too many failed login attempts. Try again in {minutes} minute(s).", "account_locked");
+        }
+
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
         if (result == PasswordVerificationResult.Failed)
         {
+            user.FailedLoginCount++;
+            if (user.FailedLoginCount >= MaxFailedLogins)
+            {
+                user.LockoutEndsAt = now.AddMinutes(LockoutMinutes);
+                user.FailedLoginCount = 0;
+            }
+            await _refreshTokenRepository.SaveChangesAsync(cancellationToken);   // same DbContext: saves the counter
             throw new UnauthorizedException(InvalidCredentials);
         }
+
+        user.FailedLoginCount = 0;
+        user.LockoutEndsAt = null;
 
         if (result == PasswordVerificationResult.SuccessRehashNeeded)
         {

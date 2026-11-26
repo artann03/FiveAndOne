@@ -51,7 +51,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
 
         var detail = _environment.IsDevelopment() && status >= 500 ? exception.ToString() : null;
 
-        await ErrorResponseFactory.WriteAsync(httpContext, status, message, code, errors, detail);
+        await ErrorResponseFactory.WriteAsync(httpContext, status, message, code, errors, detail, (exception as AppException)?.Details);
         return true;
     }
 
@@ -71,7 +71,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         DbUpdateException { InnerException: PostgresException pg } => pg.SqlState switch
         {
             PostgresErrorCodes.ExclusionViolation => (StatusCodes.Status409Conflict, "slot_unavailable",
-                "The selected time slot is no longer available."),
+                "This time slot is no longer available. Please choose another time."),
             PostgresErrorCodes.UniqueViolation => (StatusCodes.Status409Conflict, "duplicate",
                 "A record with the same value already exists."),
             PostgresErrorCodes.ForeignKeyViolation => (StatusCodes.Status400BadRequest, "invalid_reference",

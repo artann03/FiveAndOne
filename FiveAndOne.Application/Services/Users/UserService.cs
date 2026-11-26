@@ -61,7 +61,9 @@ public class UserService : IUserService
         string email,
         string password,
         UserRole role,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? phoneNumber = null,
+        string? preferredLanguage = null)
     {
         var normalizedEmail = NormalizeEmail(email);
         var trimmedUsername = username.Trim();
@@ -83,6 +85,8 @@ public class UserService : IUserService
             Username = trimmedUsername,
             Email = normalizedEmail,
             Role = role,
+            PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
+            PreferredLanguage = string.IsNullOrWhiteSpace(preferredLanguage) ? "sq" : preferredLanguage.Trim().ToLowerInvariant()
         };
 
         user.PasswordHash = _passwordHasher.HashPassword(user, password);
@@ -91,6 +95,22 @@ public class UserService : IUserService
         await _userRepository.SaveChangesAsync(cancellationToken);
 
         return user;
+    }
+
+    public async Task<string> GenerateUsernameAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var local = NormalizeEmail(email).Split('@')[0];
+        var baseName = new string(local.Where(c => char.IsLetterOrDigit(c) || c is '_' or '.').ToArray());
+        if (baseName.Length < 3) baseName = (baseName + "user").PadRight(3, '0');
+        if (baseName.Length > 40) baseName = baseName[..40];
+
+        var candidate = baseName;
+        for (var i = 2; await _userRepository.UsernameExistsAsync(candidate, cancellationToken); i++)
+        {
+            candidate = $"{baseName}{i}";
+        }
+
+        return candidate;
     }
 
     public async Task<PagedResponse<UserResponse>> GetUsersAsync(

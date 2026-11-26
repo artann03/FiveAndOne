@@ -51,6 +51,12 @@ public class SaveFacilityRequest
     /// <summary>Characteristics / amenities (ids from GET /api/amenities).</summary>
     public List<Guid> AmenityIds { get; set; } = new();
 
-    /// <summary>Image URLs in display order; the first one is the cover image.</summary>
-    public List<string> ImageUrls { get; set; } = new();
+    /// <summary>
+    /// Image URLs in display order; the first one is the cover image. Null = keep the current images
+    /// (use the upload endpoints under /images to add files).
+    /// </summary>
+    public List<string>? ImageUrls { get; set; }
+
+    /// <summary>Optional parent venue (sports centre) of the same business.</summary>
+    public Guid? VenueId { get; set; }
 }

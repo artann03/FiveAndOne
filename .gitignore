@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Locally uploaded facility images (mock file storage)
+FiveAndOne/wwwroot/uploads/

@@ -19,6 +19,8 @@ public class UserResponse
     public string? ProfileImageUrl { get; set; }
     public string? City { get; set; }
     public string? Bio { get; set; }
+    public string PreferredLanguage { get; set; } = "sq";
+    public ProfileVisibility ProfileVisibility { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public static UserResponse FromUser(User user) => new()
@@ -36,6 +38,8 @@ public class UserResponse
         ProfileImageUrl = user.ProfileImageUrl,
         City = user.City,
         Bio = user.Bio,
+        PreferredLanguage = user.PreferredLanguage,
+        ProfileVisibility = user.ProfileVisibility,
         CreatedAt = user.CreatedAt
     };
 }

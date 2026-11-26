@@ -33,6 +33,17 @@ public class AuthController : ControllerBase
         return Ok(await _authService.RegisterAsync(request, cancellationToken));
     }
 
+    /// <summary>"Create business account" (story 06): owner account + business in one step, logged in immediately.</summary>
+    [AllowAnonymous]
+    [HttpPost("register-business")]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AuthResponse>> RegisterBusiness(FiveAndOne.Application.Dtos.Businesses.RegisterBusinessRequest request, CancellationToken cancellationToken)
+    {
+        return Ok(await _authService.RegisterBusinessAsync(request, cancellationToken));
+    }
+
     [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]

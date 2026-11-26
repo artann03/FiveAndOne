@@ -21,6 +21,10 @@ public class ErrorResponse
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IDictionary<string, string[]>? Errors { get; init; }
 
+    /// <summary>Structured extra information for some errors, e.g. the reservations that conflict with a closure.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? Details { get; init; }
+
     /// <summary>Exception details. Only included in Development, never in production.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Detail { get; init; }

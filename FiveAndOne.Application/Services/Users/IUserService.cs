@@ -22,7 +22,12 @@ public interface IUserService
         string email,
         string password,
         UserRole role,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string? phoneNumber = null,
+        string? preferredLanguage = null);
+
+    /// <summary>Free username derived from an email ("ana.k@x.com" -> "ana.k", "ana.k2", ...).</summary>
+    Task<string> GenerateUsernameAsync(string email, CancellationToken cancellationToken = default);
 
     Task<PagedResponse<UserResponse>> GetUsersAsync(int page, int pageSize, UserRole? role, CancellationToken cancellationToken = default);
     Task<UserResponse> ChangeRoleAsync(Guid actingUserId, Guid targetUserId, UserRole newRole, CancellationToken cancellationToken = default);

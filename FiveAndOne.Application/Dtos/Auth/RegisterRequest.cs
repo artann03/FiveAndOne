@@ -21,7 +21,15 @@ public class RegisterRequest
     [Required, StringLength(128, MinimumLength = 8)]
     public required string Password { get; set; }
 
+    [RegularExpression(@"^\+?[0-9][0-9 ()\-]{5,28}$", ErrorMessage = "Phone must be a valid phone number, e.g. +383 44 123 456.")]
+    public string? PhoneNumber { get; set; }
+
+    /// <summary>sq (default), en, tr or sr.</summary>
+    [RegularExpression("^(?i)(sq|en|tr|sr)$", ErrorMessage = "Preferred language must be one of: sq, en, tr, sr.")]
+    public string? PreferredLanguage { get; set; }
+
     // Only "User" (default) or "Business" can be chosen at sign-up.
+    // Businesses should use POST /api/auth/register-business (creates the business in the same step).
     // Admin / SuperAdmin are assigned by a SuperAdmin via /api/admin/users/{id}/role.
     public UserRole Role { get; set; } = UserRole.User;
 }

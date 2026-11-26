@@ -1,11 +1,11 @@
 using FiveAndOne.Domain.Entities.Facilities;
-using System.Collections.Generic;
 
 namespace FiveAndOne.Application.Services.Facilities;
 
 /// <summary>
 /// What a facility must have before it can be published (and must keep while published).
 /// Keys match the request field names so the frontend can highlight the right inputs.
+/// Requires the collections Sports, Images, OperatingHours and PriceRules to be loaded.
 /// </summary>
 public static class FacilityPublishRules
 {
@@ -36,6 +36,13 @@ public static class FacilityPublishRules
 
         if (facility.Images.Count == 0)
             missing["imageUrls"] = new[] { "Add at least one image." };
+
+        // Without hours or prices customers would see a listing they can't book.
+        if (facility.OperatingHours.Count == 0)
+            missing["operatingHours"] = new[] { "Set the weekly opening hours." };
+
+        if (facility.PriceRules.Count == 0)
+            missing["pricing"] = new[] { "Add at least one price." };
 
         return missing;
     }

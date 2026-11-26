@@ -14,7 +14,8 @@ public static class ErrorResponseFactory
         string? message = null,
         string? code = null,
         IDictionary<string, string[]>? errors = null,
-        string? detail = null)
+        string? detail = null,
+        object? details = null)
     {
         return new ErrorResponse
         {
@@ -22,6 +23,7 @@ public static class ErrorResponseFactory
             Code = code ?? ErrorResponse.CodeFor(status),
             Message = message ?? ErrorResponse.DefaultMessageFor(status),
             Errors = errors,
+            Details = details,
             Detail = detail,
             TraceId = Activity.Current?.Id ?? httpContext.TraceIdentifier
         };
@@ -33,11 +35,12 @@ public static class ErrorResponseFactory
         string? message = null,
         string? code = null,
         IDictionary<string, string[]>? errors = null,
-        string? detail = null)
+        string? detail = null,
+        object? details = null)
     {
         httpContext.Response.StatusCode = status;
         return httpContext.Response.WriteAsJsonAsync(
-            Create(httpContext, status, message, code, errors, detail),
+            Create(httpContext, status, message, code, errors, detail, details),
             options: null,
             contentType: "application/json");
     }
