@@ -99,13 +99,13 @@ public class DiscoveryService : IDiscoveryService
         if (!string.IsNullOrWhiteSpace(query.City))
         {
             var city = Text.EscapeLike(query.City.Trim());
-            q = q.Where(f => f.City != null && EF.Functions.ILike(f.City, city));
+            q = q.Where(f => f.City != null && EF.Functions.ILike(f.City, city, "\\"));
         }
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var pattern = $"%{Text.EscapeLike(query.Search.Trim())}%";
-            q = q.Where(f => EF.Functions.ILike(f.Name, pattern) || EF.Functions.ILike(f.Business.BusinessName, pattern)
-                             || (f.Description != null && EF.Functions.ILike(f.Description, pattern)));
+            q = q.Where(f => EF.Functions.ILike(f.Name, pattern, "\\") || EF.Functions.ILike(f.Business.BusinessName, pattern, "\\")
+                             || (f.Description != null && EF.Functions.ILike(f.Description, pattern, "\\")));
         }
 
         var candidates = await q.OrderByDescending(f => f.PublishedAt).Take(MaxCandidates).ToListAsync(cancellationToken);
@@ -445,7 +445,7 @@ public class DiscoveryService : IDiscoveryService
         var ids = promotions.Select(p => p.FacilityId).ToList();
         var q = LoadPublic().Where(f => ids.Contains(f.Id));
         if (sportId.HasValue) q = q.Where(f => f.Sports.Any(s => s.SportId == sportId));
-        if (!string.IsNullOrWhiteSpace(city)) q = q.Where(f => f.City != null && EF.Functions.ILike(f.City, Text.EscapeLike(city.Trim())));
+        if (!string.IsNullOrWhiteSpace(city)) q = q.Where(f => f.City != null && EF.Functions.ILike(f.City, Text.EscapeLike(city.Trim()), "\\"));
 
         var cards = await ToCardsAsync(await q.Take(5).ToListAsync(cancellationToken), sportId, null, null, cancellationToken);
         foreach (var card in cards)

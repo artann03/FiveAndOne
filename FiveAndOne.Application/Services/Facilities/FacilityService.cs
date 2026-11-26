@@ -258,7 +258,7 @@ public class FacilityService : IFacilityService
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{Text.EscapeLike(search.Trim())}%";
-            query = query.Where(x => EF.Functions.ILike(x.Name, pattern) || EF.Functions.ILike(x.Business.BusinessName, pattern));
+            query = query.Where(x => EF.Functions.ILike(x.Name, pattern, "\\") || EF.Functions.ILike(x.Business.BusinessName, pattern, "\\"));
         }
 
         var total = await query.CountAsync(cancellationToken);

@@ -307,9 +307,9 @@ public class BusinessReservationService : IBusinessReservationService
             var term = query.Search.Trim();
             var pattern = $"%{Text.EscapeLike(term)}%";
             var phone = Text.NormalizePhone(term);
-            q = q.Where(b => EF.Functions.ILike(b.BookingNumber, pattern)
-                             || (b.ContactName != null && EF.Functions.ILike(b.ContactName, pattern))
-                             || (b.ContactEmail != null && EF.Functions.ILike(b.ContactEmail, pattern))
+            q = q.Where(b => EF.Functions.ILike(b.BookingNumber, pattern, "\\")
+                             || (b.ContactName != null && EF.Functions.ILike(b.ContactName, pattern, "\\"))
+                             || (b.ContactEmail != null && EF.Functions.ILike(b.ContactEmail, pattern, "\\"))
                              || (phone != null && phone.Length >= 4 && b.ContactPhone != null && b.ContactPhone.Contains(phone)));
         }
 

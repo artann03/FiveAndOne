@@ -271,6 +271,26 @@ public class AdminConfigurationController : ControllerBase
     [Authorize(Roles = RoleNames.SuperAdmin)]
     public async Task<ActionResult<PlatformSettingResponse>> UpdateSetting(string key, [FromBody] UpdateSettingRequest request, CancellationToken ct) =>
         Ok(await _settings.UpdateAsync(User.GetUserId(), key, request.Value ?? string.Empty, ct));
+
+    /// <summary>
+    /// Runs a background job now instead of waiting for its schedule:
+    /// subscriptions (renewals, grace, expiry), retention (anonymization), notifications (send outbox), reservation-expiry.
+    /// </summary>
+    [HttpPost("jobs/{name}/run")]
+    [Authorize(Roles = RoleNames.SuperAdmin)]
+    public async Task<ActionResult<object>> RunJob(string name, [FromServices] INotificationService notifications,
+        [FromServices] FiveAndOne.Application.Services.Payments.IReservationPaymentService payments, CancellationToken ct)
+    {
+        var processed = name.ToLowerInvariant() switch
+        {
+            "subscriptions" => await _subscriptions.ProcessRenewalsAsync(ct),
+            "retention" => await _subscriptions.ProcessRetentionAsync(ct),
+            "notifications" => await notifications.DispatchPendingAsync(500, ct),
+            "reservation-expiry" => await payments.ExpireUnpaidAsync(ct),
+            _ => throw new FiveAndOne.Application.Common.Exceptions.NotFoundException("Unknown job. Use subscriptions, retention, notifications or reservation-expiry.")
+        };
+        return Ok(new { job = name, processed });
+    }
 }
 
 public class UpdateSettingRequest

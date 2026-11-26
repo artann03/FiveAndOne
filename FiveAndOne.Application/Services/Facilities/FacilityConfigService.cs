@@ -79,7 +79,8 @@ public class FacilityConfigService : IFacilityConfigService
                 MinAdvanceMinutes = facility.MinAdvanceMinutes,
                 MaxAdvanceDays = facility.MaxAdvanceDays,
                 CancellationCutoffHours = facility.CancellationCutoffHours,
-                CancellationPolicyNote = facility.CancellationPolicyNote
+                CancellationPolicyNote = facility.CancellationPolicyNote,
+                RequiresOnlinePayment = facility.RequiresOnlinePayment
             },
             EffectiveCancellationCutoffHours = facility.CancellationCutoffHours ?? context.Business.CancellationCutoffHours,
             Sports = FacilityResponse.MapSports(facility),
@@ -173,6 +174,7 @@ public class FacilityConfigService : IFacilityConfigService
         facility.MaxAdvanceDays = request.MaxAdvanceDays;
         facility.CancellationCutoffHours = request.CancellationCutoffHours;
         facility.CancellationPolicyNote = Text.NullIfEmpty(request.CancellationPolicyNote);
+        facility.RequiresOnlinePayment = request.RequiresOnlinePayment;
         facility.UpdatedAt = DateTime.UtcNow;
 
         _audit.Log(userId, "facility.rules_updated", "Facility", facility.Id.ToString(),

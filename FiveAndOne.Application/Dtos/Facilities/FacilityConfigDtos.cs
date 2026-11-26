@@ -54,6 +54,9 @@ public class FacilityRulesRequest
 
     [StringLength(1000)]
     public string? CancellationPolicyNote { get; set; }
+
+    /// <summary>Post-MVP (story 62, flag "customer_payments"): customers must pay online when booking.</summary>
+    public bool RequiresOnlinePayment { get; set; }
 }
 
 // ---------------- Weekly hours (story 14) ----------------

@@ -190,6 +190,12 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithExposedHeaders("WWW-Authenticate")));
 
 // ---------- Rate limiting (stories 03, 32, 52): per IP, stricter for auth and anonymous booking ----------
+// Limits per minute come from "RateLimiting" config (raise them behind a shared office IP or for test runs).
+var limits = builder.Configuration.GetSection("RateLimiting");
+var authPerMinute = limits.GetValue("AuthPerMinute", 20);
+var guestBookingsPerMinute = limits.GetValue("GuestBookingsPerMinute", 10);
+var verificationPer10Minutes = limits.GetValue("VerificationPer10Minutes", 10);
+var requestsPerMinute = limits.GetValue("RequestsPerMinute", 600);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -203,21 +209,21 @@ builder.Services.AddRateLimiter(options =>
 
         if (path.StartsWith("/api/auth/", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(http.Request.Method))
         {
-            return RateLimitPartition.GetFixedWindowLimiter($"auth:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) });
+            return RateLimitPartition.GetFixedWindowLimiter($"auth:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = authPerMinute, Window = TimeSpan.FromMinutes(1) });
         }
 
         if (path.StartsWith("/api/reservations", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(http.Request.Method)
             && http.Request.Headers.Authorization.Count == 0)
         {
-            return RateLimitPartition.GetFixedWindowLimiter($"guest:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) });
+            return RateLimitPartition.GetFixedWindowLimiter($"guest:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = guestBookingsPerMinute, Window = TimeSpan.FromMinutes(1) });
         }
 
         if (path.StartsWith("/api/verification", StringComparison.OrdinalIgnoreCase))
         {
-            return RateLimitPartition.GetFixedWindowLimiter($"verify:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(10) });
+            return RateLimitPartition.GetFixedWindowLimiter($"verify:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = verificationPer10Minutes, Window = TimeSpan.FromMinutes(10) });
         }
 
-        return RateLimitPartition.GetFixedWindowLimiter($"all:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = 600, Window = TimeSpan.FromMinutes(1) });
+        return RateLimitPartition.GetFixedWindowLimiter($"all:{ip}", _ => new FixedWindowRateLimiterOptions { PermitLimit = requestsPerMinute, Window = TimeSpan.FromMinutes(1) });
     });
 });
 
@@ -298,6 +304,8 @@ await app.SeedDevelopmentDataAsync();
 
 // ---------- HTTP pipeline ----------
 // 1) Exceptions anywhere below -> ErrorResponse (GlobalExceptionHandler).
+//    The framework's own "fail" log for handled exceptions is turned off in appsettings
+//    (Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware); GlobalExceptionHandler logs real 500s itself.
 app.UseExceptionHandler();
 
 // 2) Error status codes with an empty body (unknown route 404, 405, 415, NotFound() ...) -> ErrorResponse.
@@ -343,6 +351,18 @@ app.UseStaticFiles();
 
 app.UseCors();
 app.UseRateLimiter();
+
+// Unknown /api routes are 404 for everyone. Without this the secure-by-default policy answers 401 to
+// anonymous callers, which a frontend would mistake for "logged out".
+app.Use(async (context, next) =>
+{
+    if (context.GetEndpoint() is null && context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

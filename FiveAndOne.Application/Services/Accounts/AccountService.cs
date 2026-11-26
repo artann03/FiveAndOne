@@ -144,9 +144,9 @@ public class AccountService : IAccountService
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var pattern = $"%{Text.EscapeLike(query.Search.Trim())}%";
-            q = q.Where(u => EF.Functions.ILike(u.FirstName, pattern) || (u.LastName != null && EF.Functions.ILike(u.LastName, pattern))
-                             || EF.Functions.ILike(u.Username, pattern) || EF.Functions.ILike(u.Email, pattern)
-                             || (u.PhoneNumber != null && EF.Functions.ILike(u.PhoneNumber, pattern)));
+            q = q.Where(u => EF.Functions.ILike(u.FirstName, pattern, "\\") || (u.LastName != null && EF.Functions.ILike(u.LastName, pattern, "\\"))
+                             || EF.Functions.ILike(u.Username, pattern, "\\") || EF.Functions.ILike(u.Email, pattern, "\\")
+                             || (u.PhoneNumber != null && EF.Functions.ILike(u.PhoneNumber, pattern, "\\")));
         }
 
         var total = await q.CountAsync(cancellationToken);

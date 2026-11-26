@@ -196,8 +196,8 @@ public class AdminPlatformService : IAdminPlatformService
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{Text.EscapeLike(search.Trim())}%";
-            q = q.Where(b => EF.Functions.ILike(b.BusinessName, pattern) || EF.Functions.ILike(b.Email, pattern) || EF.Functions.ILike(b.City, pattern)
-                             || (b.RegistrationNumber != null && EF.Functions.ILike(b.RegistrationNumber, pattern)));
+            q = q.Where(b => EF.Functions.ILike(b.BusinessName, pattern, "\\") || EF.Functions.ILike(b.Email, pattern, "\\") || EF.Functions.ILike(b.City, pattern, "\\")
+                             || (b.RegistrationNumber != null && EF.Functions.ILike(b.RegistrationNumber, pattern, "\\")));
         }
 
         var total = await q.CountAsync(cancellationToken);

@@ -76,6 +76,7 @@ public class FacilityResponse
     // Cancellation policy (story 33); null = business default
     public int? CancellationCutoffHours { get; set; }
     public string? CancellationPolicyNote { get; set; }
+    public bool RequiresOnlinePayment { get; set; }
 
     public List<FacilitySportResponse> Sports { get; set; } = new();
     public List<IdNameResponse> Amenities { get; set; } = new();
@@ -118,6 +119,7 @@ public class FacilityResponse
             MaxAdvanceDays = f.MaxAdvanceDays,
             CancellationCutoffHours = f.CancellationCutoffHours,
             CancellationPolicyNote = f.CancellationPolicyNote,
+            RequiresOnlinePayment = f.RequiresOnlinePayment,
             Sports = MapSports(f),
             Amenities = f.Amenities.Select(a => new IdNameResponse { Id = a.AmenityId, Name = a.Amenity.Name }).OrderBy(x => x.Name).ToList(),
             Images = MapImages(f),

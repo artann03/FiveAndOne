@@ -410,7 +410,7 @@ public class PlayerService : IPlayerService
             && u.Id != viewerId);
         if (sportId.HasValue) q = q.Where(u => u.SportProfiles.Any(p => p.SportId == sportId && (level == null || p.SkillLevel == level)));
         else if (level.HasValue) q = q.Where(u => u.SportProfiles.Any(p => p.SkillLevel == level));
-        if (!string.IsNullOrWhiteSpace(city)) q = q.Where(u => u.City != null && EF.Functions.ILike(u.City, Text.EscapeLike(city.Trim())));
+        if (!string.IsNullOrWhiteSpace(city)) q = q.Where(u => u.City != null && EF.Functions.ILike(u.City, Text.EscapeLike(city.Trim()), "\\"));
 
         var total = await q.CountAsync(cancellationToken);
         var users = await q.Include(u => u.SportProfiles).ThenInclude(p => p.Sport)
@@ -539,8 +539,8 @@ public class TeamService : ITeamService
 
         var q = _db.Teams.AsNoTracking().Where(t => t.Visibility == TeamVisibility.Public);
         if (sportId.HasValue) q = q.Where(t => t.SportId == sportId);
-        if (!string.IsNullOrWhiteSpace(city)) q = q.Where(t => t.City != null && EF.Functions.ILike(t.City, Text.EscapeLike(city.Trim())));
-        if (!string.IsNullOrWhiteSpace(search)) q = q.Where(t => EF.Functions.ILike(t.Name, $"%{Text.EscapeLike(search.Trim())}%"));
+        if (!string.IsNullOrWhiteSpace(city)) q = q.Where(t => t.City != null && EF.Functions.ILike(t.City, Text.EscapeLike(city.Trim()), "\\"));
+        if (!string.IsNullOrWhiteSpace(search)) q = q.Where(t => EF.Functions.ILike(t.Name, $"%{Text.EscapeLike(search.Trim())}%", "\\"));
 
         var total = await q.CountAsync(cancellationToken);
         var teams = await q.Include(t => t.Sport).Include(t => t.Members).ThenInclude(m => m.User)
