@@ -1,5 +1,6 @@
 using FiveAndOne.Domain.Entities.Facilities;
 using FiveAndOne.Domain.Entities.Identity;
+using FiveAndOne.Domain.Entities.Sports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -14,8 +15,8 @@ public class FacilityConfiguration : IEntityTypeConfiguration<Facility>
         {
             t.HasCheckConstraint("CK_Facilities_Capacity", "\"Capacity\" IS NULL OR \"Capacity\" > 0");
             t.HasCheckConstraint("CK_Facilities_Buffer", "\"BufferMinutes\" >= 0");
-            t.HasCheckConstraint("CK_Facilities_Durations",
-                "\"MinDurationMinutes\" IS NULL OR \"MaxDurationMinutes\" IS NULL OR \"MaxDurationMinutes\" >= \"MinDurationMinutes\"");
+            t.HasCheckConstraint("CK_Facilities_SlotStep", "\"SlotStepMinutes\" > 0");
+            t.HasCheckConstraint("CK_Facilities_Advance", "\"MinAdvanceMinutes\" >= 0 AND \"MaxAdvanceDays\" > 0");
         });
         entity.HasKey(x => x.Id);
 
@@ -32,19 +33,25 @@ public class FacilityConfiguration : IEntityTypeConfiguration<Facility>
         entity.Property(x => x.TimeZone).IsRequired().HasMaxLength(64);
         entity.Property(x => x.Status).HasConversion<int>();
         entity.Property(x => x.SuspensionReason).HasMaxLength(500);
-        entity.Property(x => x.BookingMode).HasConversion<int>();
-        entity.Property(x => x.ConfirmationMode).HasConversion<int>();
+        entity.Property(x => x.DurationOptions).IsRequired();
+        entity.Property(x => x.CancellationPolicyNote).HasMaxLength(1000);
         entity.Property(x => x.Version).IsRowVersion();   // maps to Postgres xmin
 
         entity.HasIndex(x => x.Slug).IsUnique();
-        entity.HasIndex(x => new { x.OwnerUserId, x.Status });
+        entity.HasIndex(x => new { x.BusinessId, x.Status });
         entity.HasIndex(x => new { x.Status, x.City });
         entity.HasIndex(x => new { x.Latitude, x.Longitude });
+        entity.HasIndex(x => x.VenueId);
 
-        entity.HasOne(x => x.Owner)
-            .WithMany(x => x.OwnedFacilities)
-            .HasForeignKey(x => x.OwnerUserId)
+        entity.HasOne(x => x.Business)
+            .WithMany(x => x.Facilities)
+            .HasForeignKey(x => x.BusinessId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasOne(x => x.Venue)
+            .WithMany(x => x.Facilities)
+            .HasForeignKey(x => x.VenueId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -130,7 +137,8 @@ public class FacilitySportConfiguration : IEntityTypeConfiguration<FacilitySport
 {
     public void Configure(EntityTypeBuilder<FacilitySport> entity)
     {
-        entity.ToTable("FacilitySports");
+        entity.ToTable("FacilitySports", t =>
+            t.HasCheckConstraint("CK_FacilitySports_Buffer", "\"BufferMinutes\" IS NULL OR \"BufferMinutes\" >= 0"));
         entity.HasKey(x => new { x.FacilityId, x.SportId });
 
         entity.HasIndex(x => x.SportId);
@@ -147,45 +155,55 @@ public class FacilitySportConfiguration : IEntityTypeConfiguration<FacilitySport
     }
 }
 
-public class FacilityMemberConfiguration : IEntityTypeConfiguration<FacilityMember>
-{
-    public void Configure(EntityTypeBuilder<FacilityMember> entity)
-    {
-        entity.ToTable("FacilityMembers");
-        entity.HasKey(x => x.Id);
-
-        entity.Property(x => x.Permissions).HasConversion<int>();
-
-        entity.HasIndex(x => new { x.FacilityId, x.UserId }).IsUnique();
-        entity.HasIndex(x => x.UserId);
-
-        entity.HasOne(x => x.Facility)
-            .WithMany(x => x.Members)
-            .HasForeignKey(x => x.FacilityId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        entity.HasOne(x => x.User)
-            .WithMany(x => x.FacilityMemberships)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-    }
-}
-
 public class FacilityOperatingHoursConfiguration : IEntityTypeConfiguration<FacilityOperatingHours>
 {
     public void Configure(EntityTypeBuilder<FacilityOperatingHours> entity)
     {
-        entity.ToTable("FacilityOperatingHours");
+        entity.ToTable("FacilityOperatingHours", t =>
+            t.HasCheckConstraint("CK_FacilityOperatingHours_Window", "\"OpensAt\" <> \"ClosesAt\""));
         entity.HasKey(x => x.Id);
 
         entity.Property(x => x.DayOfWeek).HasConversion<int>();
 
-        entity.HasIndex(x => new { x.FacilityId, x.DayOfWeek });
+        entity.HasIndex(x => new { x.FacilityId, x.SportId, x.DayOfWeek });
 
         entity.HasOne(x => x.Facility)
             .WithMany(x => x.OperatingHours)
             .HasForeignKey(x => x.FacilityId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne<Sport>()
+            .WithMany()
+            .HasForeignKey(x => x.SportId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class FacilityScheduleExceptionConfiguration : IEntityTypeConfiguration<FacilityScheduleException>
+{
+    public void Configure(EntityTypeBuilder<FacilityScheduleException> entity)
+    {
+        entity.ToTable("FacilityScheduleExceptions", t =>
+        {
+            t.HasCheckConstraint("CK_FacilityScheduleExceptions_Dates", "\"EndDate\" >= \"StartDate\"");
+            t.HasCheckConstraint("CK_FacilityScheduleExceptions_Hours",
+                "\"IsClosed\" OR (\"OpensAt\" IS NOT NULL AND \"ClosesAt\" IS NOT NULL AND \"OpensAt\" <> \"ClosesAt\")");
+        });
+        entity.HasKey(x => x.Id);
+
+        entity.Property(x => x.Reason).HasMaxLength(500);
+
+        entity.HasIndex(x => new { x.FacilityId, x.StartDate, x.EndDate });
+
+        entity.HasOne(x => x.Facility)
+            .WithMany(x => x.ScheduleExceptions)
+            .HasForeignKey(x => x.FacilityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -194,50 +212,31 @@ public class FacilityPriceRuleConfiguration : IEntityTypeConfiguration<FacilityP
     public void Configure(EntityTypeBuilder<FacilityPriceRule> entity)
     {
         entity.ToTable("FacilityPriceRules", t =>
-            t.HasCheckConstraint("CK_FacilityPriceRules_Amount", "\"Amount\" >= 0"));
+        {
+            t.HasCheckConstraint("CK_FacilityPriceRules_Amount", "\"Amount\" >= 0");
+            t.HasCheckConstraint("CK_FacilityPriceRules_Duration", "\"DurationMinutes\" IS NULL OR \"DurationMinutes\" > 0");
+            t.HasCheckConstraint("CK_FacilityPriceRules_Window",
+                "(\"StartTime\" IS NULL AND \"EndTime\" IS NULL) OR (\"StartTime\" IS NOT NULL AND \"EndTime\" IS NOT NULL)");
+        });
         entity.HasKey(x => x.Id);
 
         entity.Property(x => x.DayOfWeek).HasConversion<int>();
         entity.Property(x => x.PriceType).HasConversion<int>();
         entity.Property(x => x.Amount).HasPrecision(18, 2);
         entity.Property(x => x.Currency).IsRequired().HasMaxLength(3);
+        entity.Property(x => x.Label).HasMaxLength(100);
 
-        entity.HasIndex(x => new { x.FacilityId, x.DayOfWeek });
+        entity.HasIndex(x => new { x.FacilityId, x.SportId });
 
         entity.HasOne(x => x.Facility)
             .WithMany(x => x.PriceRules)
             .HasForeignKey(x => x.FacilityId)
             .OnDelete(DeleteBehavior.Cascade);
-    }
-}
 
-public class FacilitySessionConfiguration : IEntityTypeConfiguration<FacilitySession>
-{
-    public void Configure(EntityTypeBuilder<FacilitySession> entity)
-    {
-        entity.ToTable("FacilitySessions", t =>
-        {
-            t.HasCheckConstraint("CK_FacilitySessions_Time", "\"EndsAt\" > \"StartsAt\"");
-            t.HasCheckConstraint("CK_FacilitySessions_Capacity", "\"Capacity\" > 0 AND \"BookedCount\" >= 0 AND \"BookedCount\" <= \"Capacity\"");
-        });
-        entity.HasKey(x => x.Id);
-
-        entity.Property(x => x.PricePerSpot).HasPrecision(18, 2);
-        entity.Property(x => x.Currency).IsRequired().HasMaxLength(3);
-        entity.Property(x => x.Status).HasConversion<int>();
-        entity.Property(x => x.Version).IsRowVersion();   // maps to Postgres xmin
-
-        entity.HasIndex(x => new { x.FacilityId, x.StartsAt });
-
-        entity.HasOne(x => x.Facility)
-            .WithMany(x => x.Sessions)
-            .HasForeignKey(x => x.FacilityId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        entity.HasOne(x => x.Sport)
+        entity.HasOne<Sport>()
             .WithMany()
             .HasForeignKey(x => x.SportId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -249,14 +248,19 @@ public class AvailabilityBlockConfiguration : IEntityTypeConfiguration<Availabil
             t.HasCheckConstraint("CK_AvailabilityBlocks_Time", "\"EndsAt\" > \"StartsAt\""));
         entity.HasKey(x => x.Id);
 
-        entity.Property(x => x.Type).HasConversion<int>();
-        entity.Property(x => x.Reason).HasMaxLength(500);
+        entity.Property(x => x.Reason).HasConversion<int>();
+        entity.Property(x => x.InternalNote).HasMaxLength(500);
 
         entity.HasIndex(x => new { x.FacilityId, x.StartsAt, x.EndsAt });
 
         entity.HasOne(x => x.Facility)
             .WithMany(x => x.AvailabilityBlocks)
             .HasForeignKey(x => x.FacilityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne<Sport>()
+            .WithMany()
+            .HasForeignKey(x => x.SportId)
             .OnDelete(DeleteBehavior.Cascade);
 
         entity.HasOne<User>()

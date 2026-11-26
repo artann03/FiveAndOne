@@ -2,8 +2,10 @@
 using FiveAndOne.Domain.Entities.Activities;
 using FiveAndOne.Domain.Entities.Bookings;
 using FiveAndOne.Domain.Entities.Businesses;
+using FiveAndOne.Domain.Entities.Community;
 using FiveAndOne.Domain.Entities.Facilities;
 using FiveAndOne.Domain.Entities.Identity;
+using FiveAndOne.Domain.Entities.Platform;
 using FiveAndOne.Domain.Entities.Sports;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -23,7 +25,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserSportProfile> UserSportProfiles => Set<UserSportProfile>();
 
     // Businesses
-    public DbSet<BusinessProfile> BusinessProfiles => Set<BusinessProfile>();
+    public DbSet<Business> Businesses => Set<Business>();
+    public DbSet<BusinessMember> BusinessMembers => Set<BusinessMember>();
+    public DbSet<BusinessInvitation> BusinessInvitations => Set<BusinessInvitation>();
+    public DbSet<Venue> Venues => Set<Venue>();
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<BusinessSubscription> BusinessSubscriptions => Set<BusinessSubscription>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     // Sports
     public DbSet<Sport> Sports => Set<Sport>();
@@ -33,20 +41,34 @@ public class ApplicationDbContext : DbContext
     public DbSet<FacilityImage> FacilityImages => Set<FacilityImage>();
     public DbSet<Amenity> Amenities => Set<Amenity>();
     public DbSet<FacilityAmenity> FacilityAmenities => Set<FacilityAmenity>();
-    public DbSet<FacilityMember> FacilityMembers => Set<FacilityMember>();
-    public DbSet<FacilityOperatingHours> FacilityOperatingHours => Set<FacilityOperatingHours>();
     public DbSet<FacilitySport> FacilitySports => Set<FacilitySport>();
+    public DbSet<FacilityOperatingHours> FacilityOperatingHours => Set<FacilityOperatingHours>();
+    public DbSet<FacilityScheduleException> FacilityScheduleExceptions => Set<FacilityScheduleException>();
     public DbSet<FacilityPriceRule> FacilityPriceRules => Set<FacilityPriceRule>();
-    public DbSet<FacilitySession> FacilitySessions => Set<FacilitySession>();
     public DbSet<AvailabilityBlock> AvailabilityBlocks => Set<AvailabilityBlock>();
 
     // Bookings
     public DbSet<Booking> Bookings => Set<Booking>();
-    public DbSet<BookingStatusHistory> BookingStatusHistory => Set<BookingStatusHistory>();
+    public DbSet<BookingHistory> BookingHistory => Set<BookingHistory>();
 
     // Activities
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<ActivityParticipant> ActivityParticipants => Set<ActivityParticipant>();
+
+    // Platform
+    public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<PlatformSetting> PlatformSettings => Set<PlatformSetting>();
+    public DbSet<Translation> Translations => Set<Translation>();
+    public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
+    public DbSet<PhoneVerification> PhoneVerifications => Set<PhoneVerification>();
+
+    // Community
+    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<ContentReport> ContentReports => Set<ContentReport>();
+    public DbSet<Team> Teams => Set<Team>();
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+    public DbSet<FacilityPromotion> FacilityPromotions => Set<FacilityPromotion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -21,6 +21,16 @@ public class User : BaseEntity
     public string? City { get; set; }
     public string? Bio { get; set; }
 
+    // UI/communication language: sq (default), en, tr, sr.
+    public string PreferredLanguage { get; set; } = "sq";
+
+    // Who can see the player profile (story 64).
+    public ProfileVisibility ProfileVisibility { get; set; } = ProfileVisibility.Private;
+
+    // Brute-force protection (stories 03/52): failed logins in a row and the lockout end.
+    public int FailedLoginCount { get; set; }
+    public DateTime? LockoutEndsAt { get; set; }
+
     // Set when the user "deletes" their account (Status = Deactivated). Nothing is actually deleted.
     public DateTime? DeactivatedAt { get; set; }
 
@@ -35,13 +45,11 @@ public class User : BaseEntity
         && DeactivatedAt.HasValue
         && utcNow < DeactivatedAt.Value.AddDays(ReactivationWindowDays);
 
-    // Only for Business accounts; null until the business saves its profile.
-    public BusinessProfile? BusinessProfile { get; set; }
+    public ICollection<Business> OwnedBusinesses { get; set; } = new List<Business>();
+    public ICollection<BusinessMember> BusinessMemberships { get; set; } = new List<BusinessMember>();
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<UserSportProfile> SportProfiles { get; set; } = new List<UserSportProfile>();
-    public ICollection<Facility> OwnedFacilities { get; set; } = new List<Facility>();
-    public ICollection<FacilityMember> FacilityMemberships { get; set; } = new List<FacilityMember>();
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public ICollection<Activity> OrganizedActivities { get; set; } = new List<Activity>();
     public ICollection<ActivityParticipant> ActivityParticipations { get; set; } = new List<ActivityParticipant>();

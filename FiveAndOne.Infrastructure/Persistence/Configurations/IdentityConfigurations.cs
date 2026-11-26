@@ -22,6 +22,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(x => x.ProfileImageUrl).HasMaxLength(500);
         entity.Property(x => x.City).HasMaxLength(100);
         entity.Property(x => x.Bio).HasMaxLength(500);
+        entity.Property(x => x.PreferredLanguage).IsRequired().HasMaxLength(10);
+        entity.Property(x => x.ProfileVisibility).HasConversion<int>();
 
         entity.HasIndex(x => x.Username).IsUnique();
         entity.HasIndex(x => x.Email).IsUnique();

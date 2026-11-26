@@ -1,16 +1,20 @@
-using FiveAndOne.Domain.Entities.Identity;
+using FiveAndOne.Domain.Entities.Businesses;
 using FiveAndOne.Domain.Enums;
 
 namespace FiveAndOne.Domain.Entities.Facilities;
 
 /// <summary>
-/// One independently bookable court / pitch / lane, owned by a business account.
+/// One independently bookable court / pitch / lane, owned by a business.
 /// Availability and reservations are tracked per facility.
 /// </summary>
 public class Facility : BaseEntity
 {
-    public Guid OwnerUserId { get; set; }
-    public User Owner { get; set; } = default!;
+    public Guid BusinessId { get; set; }
+    public Business Business { get; set; } = default!;
+
+    // Optional parent venue (sports centre) this court belongs to.
+    public Guid? VenueId { get; set; }
+    public Venue? Venue { get; set; }
 
     // ---- Listing details ----
     public string Name { get; set; } = default!;
@@ -37,17 +41,22 @@ public class Facility : BaseEntity
     public DateTime? SuspendedAt { get; set; }
     public string? SuspensionReason { get; set; }
 
-    // ---- Booking rules (configured in a later feature; sensible defaults for now) ----
-    public BookingMode BookingMode { get; set; } = BookingMode.FixedSlots;
-    public int? SlotDurationMinutes { get; set; } = 60;
-    public int? MinDurationMinutes { get; set; }
-    public int? MaxDurationMinutes { get; set; }
-    public int? DurationStepMinutes { get; set; }
+    // ---- Reservation rules (story 16) ----
+    // Bookable lengths in minutes. A sport can override them (FacilitySport.DurationOptions).
+    public int[] DurationOptions { get; set; } = { 60 };
+    // Free time kept after every reservation (cleaning, changeover). Default 0.
     public int BufferMinutes { get; set; }
-    public ConfirmationMode ConfirmationMode { get; set; } = ConfirmationMode.Automatic;
+    // Slots start every N minutes from opening time.
+    public int SlotStepMinutes { get; set; } = 30;
     public int MinAdvanceMinutes { get; set; }
     public int MaxAdvanceDays { get; set; } = 30;
-    public int CancellationCutoffHours { get; set; } = 24;
+
+    // ---- Cancellation policy (story 33). Null = use the business default. ----
+    public int? CancellationCutoffHours { get; set; }
+    public string? CancellationPolicyNote { get; set; }
+
+    // Post-MVP (story 62): reservations must be paid online. Only used when the feature flag is on.
+    public bool RequiresOnlinePayment { get; set; }
 
     // Postgres xmin: two simultaneous edits can't silently overwrite each other.
     public uint Version { get; set; }
@@ -55,9 +64,8 @@ public class Facility : BaseEntity
     public ICollection<FacilityImage> Images { get; set; } = new List<FacilityImage>();
     public ICollection<FacilityAmenity> Amenities { get; set; } = new List<FacilityAmenity>();
     public ICollection<FacilitySport> Sports { get; set; } = new List<FacilitySport>();
-    public ICollection<FacilityMember> Members { get; set; } = new List<FacilityMember>();
     public ICollection<FacilityOperatingHours> OperatingHours { get; set; } = new List<FacilityOperatingHours>();
+    public ICollection<FacilityScheduleException> ScheduleExceptions { get; set; } = new List<FacilityScheduleException>();
     public ICollection<FacilityPriceRule> PriceRules { get; set; } = new List<FacilityPriceRule>();
-    public ICollection<FacilitySession> Sessions { get; set; } = new List<FacilitySession>();
     public ICollection<AvailabilityBlock> AvailabilityBlocks { get; set; } = new List<AvailabilityBlock>();
 }

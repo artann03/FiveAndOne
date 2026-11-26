@@ -23,49 +23,27 @@ public enum FacilityType
     Other = 9
 }
 
-public enum ConfirmationMode
-{
-    Automatic = 1,
-    Manual = 2
-}
-
-public enum BookingMode
-{
-    FixedSlots = 1,   // fixed length, e.g. 60-minute futsal slots
-    Flexible = 2,     // customer picks a length between min and max, in steps
-    Session = 3       // pre-scheduled sessions with several spots (FacilitySessions)
-}
-
 public enum PriceType
 {
-    PerHour = 1,
-    PerSlot = 2,
-    PerPerson = 3
+    PerHour = 1,          // Amount x (duration / 60)
+    PerReservation = 2    // Amount for the whole reservation, whatever its length
 }
 
-public enum FacilitySessionStatus
+/// <summary>Reason picked when a business manually blocks time (story 19).</summary>
+public enum BlockReason
 {
-    Scheduled = 1,
-    Cancelled = 2
+    Maintenance = 1,
+    PrivateUse = 2,
+    Event = 3,
+    Other = 4
 }
 
-public enum AvailabilityBlockType
+/// <summary>What to do with reservations that collide with a new closure or block.</summary>
+public enum ConflictResolution
 {
-    Closure = 1,
-    Maintenance = 2,
-    Holiday = 3,
-    Blocked = 4,
-    SpecialOpening = 5
-}
+    /// <summary>Cancel the colliding reservations (as "cancelled by business").</summary>
+    CancelReservations = 1,
 
-[Flags]
-public enum FacilityPermissions
-{
-    None = 0,
-    ManageBookings = 1,
-    ManageAvailability = 2,
-    ManageResources = 4,
-    ManagePricing = 8,
-    ViewReports = 16,
-    All = ManageBookings | ManageAvailability | ManageResources | ManagePricing | ViewReports
+    /// <summary>Save anyway and keep the reservations; the business handles them itself.</summary>
+    KeepReservations = 2
 }

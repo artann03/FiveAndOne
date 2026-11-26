@@ -33,11 +33,12 @@ public class SportConfiguration : IEntityTypeConfiguration<Sport>
             Seed(3, "Basketball", "basketball", SportCategory.TeamSport, 2, 10),
             Seed(4, "Tennis", "tennis", SportCategory.Racket, 2, 4),
             Seed(5, "Padel", "padel", SportCategory.Racket, 2, 4),
-            Seed(6, "Golf", "golf", SportCategory.Target, 1, 4),
+            Seed(6, "Fitness", "fitness", SportCategory.Individual, 1, 20),
             Seed(7, "Volleyball", "volleyball", SportCategory.TeamSport, 4, 12),
             Seed(8, "Badminton", "badminton", SportCategory.Racket, 2, 4),
             Seed(9, "Swimming", "swimming", SportCategory.Water, 1, 10),
-            Seed(10, "Table Tennis", "table-tennis", SportCategory.Racket, 2, 4));
+            Seed(10, "Table Tennis", "table-tennis", SportCategory.Racket, 2, 4),
+            Seed(11, "Martial Arts", "martial-arts", SportCategory.Individual, 1, 20));
     }
 
     private static Sport Seed(int n, string name, string slug, SportCategory category, int min, int max) => new()
