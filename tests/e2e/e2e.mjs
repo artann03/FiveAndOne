@@ -75,7 +75,8 @@ async function main() {
   expect(await api('GET', '/api/feature-flags'), 200, 'feature flags', d => d.guest_booking === true);
   expect(await api('GET', '/api/plans'), 200, 'plans');
   expect(await api('GET', '/api/home'), 200, 'home', d => Array.isArray(d.sports) && Array.isArray(d.cities));
-  expect(await api('GET', '/openapi/v1.json'), 200, 'openapi');
+  expect(await api('GET', '/openapi/v1.json'), 200, 'openapi documents X-Business-Id', d => JSON.stringify(d).includes('X-Business-Id'));
+  expect(await api('GET', '/health'), 200, 'health check', d => d === 'Healthy');
   expect(await api('GET', '/api/does-not-exist'), 404, 'unknown route uses ErrorResponse', d => d.code === 'not_found');
 
   // ================================================================= Auth
@@ -233,7 +234,11 @@ async function main() {
   const extra = [];
   for (let i = 0; i < 2; i++) extra.push((await api('POST', '/api/business/facilities', { token: owner, body: { name: `Extra ${i}` } })).data.id);
   expect(await api('POST', '/api/business/facilities', { token: owner, body: { name: 'Over limit' } }), 403, 'plan facility limit', d => d.code === 'plan_limit_reached');
+  fd = new FormData(); fd.append('files', PNG(), 'c.png');
+  const extraImage = (await api('POST', `/api/business/facilities/${extra[1]}/images`, { token: owner, form: fd })).data?.[0]?.url;
+  expect(await api('GET', extraImage), 200, 'image of facility to delete is served');
   expect(await api('DELETE', `/api/business/facilities/${extra[1]}`, { token: owner }), 204, 'delete unbooked facility');
+  expect(await api('GET', extraImage), 404, 'uploaded file removed with the facility');
   const slug = (await api('GET', `/api/business/facilities/${F}`, { token: owner })).data.slug;
 
   // ================================================================= Public discovery (17-27)

@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.vs/
+.git/
+FiveAndOne.git/
+**/wwwroot/uploads/
+tests/
+docs/
+**/*.user
+**/appsettings.Development.json

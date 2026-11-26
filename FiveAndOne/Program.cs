@@ -94,8 +94,27 @@ builder.Services.AddOpenApi(options =>
         });
         return Task.CompletedTask;
     });
+
+    // Show the optional X-Business-Id header on every business endpoint in Swagger.
+    options.AddOperationTransformer((operation, context, cancellationToken) =>
+    {
+        if (context.Description.RelativePath?.StartsWith("api/business", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            operation.Parameters ??= new List<OpenApiParameter>();
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = "X-Business-Id",
+                In = ParameterLocation.Header,
+                Required = false,
+                Description = "Only needed when the user manages more than one business (ids from GET /api/business/mine).",
+                Schema = new OpenApiSchema { Type = "string", Format = "uuid" }
+            });
+        }
+        return Task.CompletedTask;
+    });
 });
 builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
@@ -356,7 +375,8 @@ app.UseRateLimiter();
 // anonymous callers, which a frontend would mistake for "logged out".
 app.Use(async (context, next) =>
 {
-    if (context.GetEndpoint() is null && context.Request.Path.StartsWithSegments("/api"))
+    if (context.GetEndpoint() is null
+        && (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/uploads")))
     {
         context.Response.StatusCode = StatusCodes.Status404NotFound;
         return;
@@ -368,5 +388,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Liveness/readiness for hosting and uptime monitoring (no auth, no details beyond the status).
+app.MapHealthChecks("/health").AllowAnonymous().DisableRateLimiting();
 
 app.Run();

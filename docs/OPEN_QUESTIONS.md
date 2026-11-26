@@ -91,9 +91,19 @@ Please confirm or correct them. **Bold = most important to answer before launch.
 | 65 Teams | `teams` | Invite/request/approve, captain hand-over, reports. **Safety/moderation rules to define.** |
 | 66 Recommendations / promoted | `recommendations`, `promoted_listings` | Transparent scoring (each result lists its reasons). Promotions are admin-created and always labelled "Sponsored", shown separately. |
 
+## Found during the gap review (open)
+
+| # | Topic | Current behaviour | Question |
+|---|---|---|---|
+| G1 | **Closed accounts (deleted > 60 days ago)** | Stay in the database with their personal data (name, email, phone); only login is blocked. | **Anonymize them after the 60-day window (frees the email for re-registration, better for privacy law)?** |
+| G2 | List performance | Reservation lists load each row's facility/sport separately (a few queries per row; fine for pages of 20–50). Search loads up to 300 matching facilities and computes slots in memory. | OK for launch; optimize together with load testing (story 55). |
+| G3 | Image files | Removing images or deleting a facility now also deletes the uploaded files (local mock storage). Files from facilities anonymized by retention are kept. | Delete images on retention too, once real storage is chosen? |
+| G4 | Hosting | A Dockerfile and a CI build check exist (`.github/workflows/build.yml`: compile + "migrations match the model"). | Choose hosting (and backups) so pre-prod/prod deployment can be added. |
+| G5 | Health | `GET /health` reports the API + database status (no auth). | Which uptime monitor should call it? |
+
 ## Not done (need a team, infrastructure or decisions)
 
-- **01 Environments & pipeline**: no Dockerfile or CI yet. Needs the hosting choice and pre-prod/prod environments.
+- **01 Environments & pipeline**: CI build check and Dockerfile added; actual pre-prod/prod environments, deployment and rollback procedure need the hosting choice.
 - **53 UI states**: frontend work. The backend gives a stable `code` + safe `message` for every error.
 - **54 Logging/monitoring/alerting**: needs a tool choice (e.g. Sentry, Grafana/Loki, Application Insights). Correlation ids (`traceId`) are already in every error and audit row.
 - **55 Performance targets** and **56 QA/production readiness**: need load testing and a QA pass.

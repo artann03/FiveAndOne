@@ -1,0 +1,31 @@
+name: Build
+
+# Automated check for every push and pull request (story 01): the solution must compile.
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore FiveAndOne.sln
+
+      - name: Build
+        run: dotnet build FiveAndOne.sln -c Release --no-restore
+
+      - name: Check that migrations match the model
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --project FiveAndOne.Infrastructure --startup-project FiveAndOne --configuration Release --no-build
+        env:
+          Jwt__Key: ci-only-key-that-is-long-enough-for-hmac-sha256-signing-0123456789

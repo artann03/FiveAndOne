@@ -97,34 +97,74 @@ public class BookingNotifier : IBookingNotifier
         }
     }
 
-    /// <summary>Plain-text templates (sq / en; tr and sr fall back to en until translations are provided).</summary>
+    // Plain-text templates in every supported language (stories 51, 60). Unknown languages use English.
+    private static readonly Dictionary<string, Dictionary<string, string>> Texts = new()
+    {
+        ["sq"] = new()
+        {
+            ["created"] = "Rezervim i ri",
+            ["cancelled_by_customer"] = "Rezervimi u anulua nga klienti",
+            ["cancelled_by_business"] = "Rezervimi u anulua nga biznesi",
+            ["rescheduled_by_customer"] = "Rezervimi u ndryshua nga klienti",
+            ["rescheduled_by_business"] = "Rezervimi u ndryshua nga biznesi",
+            ["update"] = "Përditësim i rezervimit",
+            ["reference"] = "Referenca", ["facility"] = "Objekti", ["sport"] = "Sporti",
+            ["when"] = "Data dhe ora", ["previous"] = "Më parë"
+        },
+        ["en"] = new()
+        {
+            ["created"] = "New reservation",
+            ["cancelled_by_customer"] = "Reservation cancelled by the customer",
+            ["cancelled_by_business"] = "Reservation cancelled by the business",
+            ["rescheduled_by_customer"] = "Reservation changed by the customer",
+            ["rescheduled_by_business"] = "Reservation changed by the business",
+            ["update"] = "Reservation update",
+            ["reference"] = "Reference", ["facility"] = "Facility", ["sport"] = "Sport",
+            ["when"] = "Date and time", ["previous"] = "Previously"
+        },
+        ["tr"] = new()
+        {
+            ["created"] = "Yeni rezervasyon",
+            ["cancelled_by_customer"] = "Rezervasyon müşteri tarafından iptal edildi",
+            ["cancelled_by_business"] = "Rezervasyon işletme tarafından iptal edildi",
+            ["rescheduled_by_customer"] = "Rezervasyon müşteri tarafından değiştirildi",
+            ["rescheduled_by_business"] = "Rezervasyon işletme tarafından değiştirildi",
+            ["update"] = "Rezervasyon güncellemesi",
+            ["reference"] = "Referans", ["facility"] = "Tesis", ["sport"] = "Spor",
+            ["when"] = "Tarih ve saat", ["previous"] = "Önceki"
+        },
+        ["sr"] = new()
+        {
+            ["created"] = "Nova rezervacija",
+            ["cancelled_by_customer"] = "Kupac je otkazao rezervaciju",
+            ["cancelled_by_business"] = "Objekat je otkazao rezervaciju",
+            ["rescheduled_by_customer"] = "Kupac je promenio rezervaciju",
+            ["rescheduled_by_business"] = "Objekat je promenio rezervaciju",
+            ["update"] = "Izmena rezervacije",
+            ["reference"] = "Referenca", ["facility"] = "Objekat", ["sport"] = "Sport",
+            ["when"] = "Datum i vreme", ["previous"] = "Ranije"
+        }
+    };
+
     private static (string Subject, string Body) Template(string language, string evt, string reference, string facility, string sport,
         string when, string? previous, string link)
     {
-        var sq = language == "sq";
-        var title = evt switch
-        {
-            "created" => sq ? "Rezervim i ri" : "New reservation",
-            "cancelled_by_customer" => sq ? "Rezervimi u anulua nga klienti" : "Reservation cancelled by the customer",
-            "cancelled_by_business" => sq ? "Rezervimi u anulua nga biznesi" : "Reservation cancelled by the business",
-            "rescheduled_by_customer" => sq ? "Rezervimi u ndryshua nga klienti" : "Reservation changed by the customer",
-            "rescheduled_by_business" => sq ? "Rezervimi u ndryshua nga biznesi" : "Reservation changed by the business",
-            _ => sq ? "Përditësim i rezervimit" : "Reservation update"
-        };
+        var t = Texts.TryGetValue(language, out var texts) ? texts : Texts["en"];
+        var title = t.TryGetValue(evt, out var value) ? value : t["update"];
 
         var lines = new List<string>
         {
             title,
             string.Empty,
-            $"{(sq ? "Referenca" : "Reference")}: {reference}",
-            $"{(sq ? "Objekti" : "Facility")}: {facility}",
-            $"{(sq ? "Sporti" : "Sport")}: {sport}",
-            $"{(sq ? "Data dhe ora" : "Date and time")}: {when}"
+            $"{t["reference"]}: {reference}",
+            $"{t["facility"]}: {facility}",
+            $"{t["sport"]}: {sport}",
+            $"{t["when"]}: {when}"
         };
 
         if (previous is not null)
         {
-            lines.Add($"{(sq ? "Më parë" : "Previously")}: {previous}");
+            lines.Add($"{t["previous"]}: {previous}");
         }
 
         if (!string.IsNullOrEmpty(link))

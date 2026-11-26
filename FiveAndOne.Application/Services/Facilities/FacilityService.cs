@@ -1,4 +1,5 @@
 using FiveAndOne.Application.Common;
+using FiveAndOne.Application.Common.Abstractions;
 using FiveAndOne.Application.Common.Exceptions;
 using FiveAndOne.Application.Common.Settings;
 using FiveAndOne.Application.Dtos.Common;
@@ -42,14 +43,36 @@ public class FacilityService : IFacilityService
     private readonly ApplicationDbContext _db;
     private readonly IBusinessAccess _access;
     private readonly IAuditService _audit;
+    private readonly IFileStorage _storage;
     private readonly FacilitySettings _settings;
 
-    public FacilityService(ApplicationDbContext db, IBusinessAccess access, IAuditService audit, IOptions<FacilitySettings> settings)
+    // Uploaded files of images removed in this request; deleted from storage once the database change is saved.
+    private readonly List<string> _removedImageUrls = new();
+
+    public FacilityService(ApplicationDbContext db, IBusinessAccess access, IAuditService audit, IFileStorage storage, IOptions<FacilitySettings> settings)
     {
         _db = db;
         _access = access;
         _audit = audit;
+        _storage = storage;
         _settings = settings.Value;
+    }
+
+    /// <summary>Deletes stored files of removed images. Failures don't matter: the image is already gone from the facility.</summary>
+    private async Task DeleteRemovedFilesAsync(CancellationToken cancellationToken)
+    {
+        foreach (var url in _removedImageUrls)
+        {
+            try
+            {
+                await _storage.DeleteAsync(url, cancellationToken);
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                // Orphaned file: harmless, can be cleaned up later.
+            }
+        }
+        _removedImageUrls.Clear();
     }
 
     private IQueryable<Facility> WithDetails() => _db.Facilities
@@ -148,6 +171,7 @@ public class FacilityService : IFacilityService
 
         facility.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
+        await DeleteRemovedFilesAsync(cancellationToken);
 
         return FacilityResponse.FromEntity(facility);
     }
@@ -239,9 +263,11 @@ public class FacilityService : IFacilityService
             throw new ConflictException("This facility has reservations and can't be deleted. Hide it instead.", "facility_has_bookings");
         }
 
+        _removedImageUrls.AddRange(facility.Images.Select(i => i.Url));
         _db.Facilities.Remove(facility);
         _audit.Log(userId, "facility.deleted", "Facility", facility.Id.ToString(), facility.Name, businessId: context.BusinessId);
         await _db.SaveChangesAsync(cancellationToken);
+        await DeleteRemovedFilesAsync(cancellationToken);
     }
 
     // =====================================================================
@@ -450,6 +476,7 @@ public class FacilityService : IFacilityService
             foreach (var image in facility.Images.Where(i => !imageUrls.Contains(i.Url)).ToList())
             {
                 facility.Images.Remove(image);
+                _removedImageUrls.Add(image.Url);
             }
 
             for (var i = 0; i < imageUrls.Count; i++)

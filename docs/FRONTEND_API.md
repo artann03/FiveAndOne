@@ -15,6 +15,8 @@ Swagger: `https://localhost:7141/swagger` (Development). Every request/response 
 | Paging | `?page=1&pageSize=20` → `{ items, page, pageSize, totalCount, totalPages }`. |
 | Booking headers | `Idempotency-Key: <uuid per submit attempt>` (reuse it when retrying the same submit) and `X-Device-Id: <random id kept in localStorage>`. |
 | Feature flags | `GET /api/feature-flags` → `{ "reviews": false, ... }`. Hide post-MVP UI when its flag is false (the API returns 404 `feature_disabled` anyway). |
+| Unknown routes | Any unknown `/api/...` path returns 404 `not_found` (never 401), so a 401 always means "token missing/expired". |
+| Health | `GET /health` → `Healthy` / `Unhealthy` (API + database). |
 
 ## Changes to endpoints that already existed
 
@@ -82,7 +84,7 @@ Booking error codes to handle:
 | Images | `POST /{id}/images` (multipart, field `files`), `DELETE /{id}/images/{imageId}`, `PUT /{id}/images/order` (array of ids) |
 | Configuration (one call) | `GET /api/business/facilities/{id}/configuration` |
 | Sports & Pricing | `PUT /{id}/sports`, `GET/PUT /{id}/pricing`, `GET /{id}/pricing/preview?sportId&date&startTime&durationMinutes` |
-| Durations / buffer / cancellation | `PUT /{id}/rules` |
+| Durations / buffer / cancellation | `PUT /{id}/rules` (also `requiresOnlinePayment`, only used when the `customer_payments` flag is on) |
 | Availability: weekly hours | `GET /{id}/hours?sportId=`, `PUT /{id}/hours` (days with `isClosed` + `windows`; `summary` returned), `DELETE /{id}/hours/{sportId}` |
 | Availability: exceptions / closures | `GET/POST /{id}/exceptions`, `DELETE /{id}/exceptions/{exceptionId}` |
 | Availability: block time | `GET /{id}/blocks`, `GET /api/business/blocks?facilityId&from&to`, `POST /{id}/blocks`, `DELETE /{id}/blocks/{blockId}` |
@@ -119,6 +121,7 @@ Business error codes:
 | Business subscriptions / retention | `GET /api/admin/subscriptions?status`, `GET /api/admin/retention` |
 | Feature flags | `GET /api/admin/feature-flags`, `POST`, `POST /{key}/enable`, `POST /{key}/disable` (SuperAdmin) |
 | Platform settings | `GET /api/admin/settings`, `PUT /api/admin/settings/{key} {value}` (SuperAdmin) |
+| Run a background job now | `POST /api/admin/jobs/{subscriptions\|retention\|notifications\|reservation-expiry}/run` (SuperAdmin) |
 | Moderation / promotions | `GET /api/admin/reports`, `POST /reports/{id}/resolve`, `PUT /api/admin/reviews/{id}/status`, `GET/POST/PUT/DELETE /api/admin/promotions` |
 
 ### Post-MVP (check the feature flag first)
